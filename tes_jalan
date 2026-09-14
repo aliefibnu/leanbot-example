@@ -1,0 +1,61 @@
+// Full Program Leanbot A (Zone 1) - Sensor PIR + IoT + Motor Motion
+
+#include <Leanbot.h>
+#include "LeanbotIoT.h"
+
+// === WiFi & IoT Setup ===
+#define WIFI_SSID     F("nnann")          // Nama Wi-Fi
+#define WIFI_PASSWORD F("10022010")       // Password Wi-Fi
+#define IOT_ASSET_ID  F("3NEPNN0WnQN9hIIIeCCqIj")  // ID Asset Pythaverse
+
+auto IoTMotion     = LbIoT.Asset.attributeInt(F("motionStatus"));
+auto IoTAlertText  = LbIoT.Asset.attribute(F("alertText"));
+
+// === PIR Sensor Setup ===
+#define PIR_PIN A1
+bool motionSent = false;
+unsigned long lastMotionTime = 0;
+const unsigned long cooldown = 5000;  // Robot bergerak & kirim status selama 5 detik
+
+void setup() {
+  Serial.begin(115200);
+  Leanbot.begin();
+  pinMode(PIR_PIN, INPUT);
+
+  LbIoT.Wifi.begin(WIFI_SSID, WIFI_PASSWORD);
+  LbIoT.Asset.begin(IOT_ASSET_ID);
+  delay(1000);
+}
+
+void loop() {
+  int pirState = digitalRead(PIR_PIN);
+
+  // 1. Jika sensor PIR mendeteksi gerakan
+  if (pirState == HIGH && !motionSent) {
+    Serial.println("Motion Detected: Zone 1");
+    
+    // Kirim data ke Pythaverse IoT Dashboard
+    IoTMotion.write(1);
+    IoTAlertText.write("Zone 1");
+    
+    // PERINTAH GERAK: Menggunakan runLR (roda kiri 50, roda kanan 50)
+    LbMotion.runLR(2000, 2000);
+
+    motionSent = true;
+    lastMotionTime = millis();
+  }
+
+  // 2. Setelah 5 detik (cooldown selesai)
+  if (motionSent && (millis() - lastMotionTime >= cooldown)) {
+    // Reset status di Pythaverse IoT Dashboard
+    IoTMotion.write(0);
+    IoTAlertText.write("");
+    
+    // PERINTAH STOP: Berhentikan kedua roda
+    LbMotion.runLR(0, 0);
+
+    motionSent = false;
+  }
+
+  delay(100);
+}
