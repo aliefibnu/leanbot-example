@@ -1,25 +1,33 @@
-#include "Leanbot.h"          // Leanbot library
-#include "LeanbotIoT.h"       // Leanbot IoT library
+#include "Leanbot.h"          
+#include "LeanbotIoT.h"       
  
-// Wifi & IoT Dashboard setup
-#define  WIFI_SSID      F( "Pribadi" )      //change the wifi user ID
-#define  WIFI_PASSWORD  F( "TANYASAMAAKU" ) //change the wifi password
+#define  WIFI_SSID      F( "LAPTOP" )      
+#define  WIFI_PASSWORD  F( "1234567890" ) 
  
-#define  IOT_ASSET_ID   F( "2PM2kk6AwnSx2Lzx48M2V7" ) //change the Dashboard link
+#define  IOT_ASSET_ID   F( "2PM2kk6AwnSx2Lzx48M2V7" ) 
 #define  IOT_REALM      F( "pythaverse" )
 
-auto IoT_Distance = LbIoT.Asset.attribute(F( "ultrasonic" )); //change the Attribute name (follow dashboard)
+auto IoT_Distance = LbIoT.Asset.attribute(F( "ultrasonic" )); 
 
 void setup()
 {
   Leanbot.begin();
-  LbIoT.Wifi.begin( WIFI_SSID, WIFI_PASSWORD );     // Connect to Wi-Fi
-  LbIoT.Asset.begin( IOT_ASSET_ID, IOT_REALM );     // Connect to IoT dashboard
+  
+  bool wifiConnected = LbIoT.Wifi.begin( WIFI_SSID, WIFI_PASSWORD );     
+  bool assetConnected = LbIoT.Asset.begin( IOT_ASSET_ID, IOT_REALM );   
+  Serial.println(String(wifiConnected) + String(assetConnected));
+
+  if (wifiConnected || assetConnected) {
+    LbRGB.fillColor(0xff0000, BITMAP(ledO, ledA, ledB, ledC, ledD, ledE, ledF));
+    LbRGB.show();
+    while(true) {}
+  }
 }
 
 void loop()
 {
   int distance = Leanbot.pingCm();
+  Serial.println(distance);
   IoT_Distance.write(String(distance));
   delay(1000);
 }
