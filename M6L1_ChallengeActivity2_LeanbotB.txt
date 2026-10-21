@@ -1,0 +1,55 @@
+// SWRP 10 - M6L1 - Challenge Activity 2 - Sample Program - Leanbot B (Alert Unit)
+ 
+#include <Leanbot.h>
+#include <LeanbotIoT.h>
+#include <U8g2lib.h>
+ 
+U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0);
+ 
+// === WiFi & IoT Setup ===
+#define WIFI_SSID     F("XXXXXXXX")
+#define WIFI_PASSWORD F("YYYYYYYY")
+#define IOT_ASSET_ID  F("your_asset_id")  // Replace with actual ID
+ 
+auto IoTMotion     = LbIoT.Asset.attributeInt(F("motionStatus"));           // Optional
+auto IoTAlertText = LbIoT.Asset.attribute(F("alertText"));
+ 
+int motion;
+String currentAlert;
+ 
+void setup() {
+  Serial.begin(115200);
+  Leanbot.begin();
+ 
+  LbIoT.Wifi.begin(WIFI_SSID, WIFI_PASSWORD);
+  LbIoT.Asset.begin(IOT_ASSET_ID);
+  delay(1000);
+ 
+  u8g2.setBusClock(400000);  
+  u8g2.setFont(u8g2_font_luBS08_tr);  
+  u8g2.begin();
+}
+ 
+void displayAlert() {
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(5, 24);
+    u8g2.print(F("Motion Detected:"));
+ 
+    u8g2.setCursor(5, 46);
+    u8g2.print(currentAlert);
+  } while (u8g2.nextPage());
+}
+ 
+void loop() {
+  motion = IoTMotion.read();
+  currentAlert = IoTAlertText.read();
+  displayAlert();
+ 
+  if (motion == 1) {
+    Leanbot.tone(1500, 100);
+    LbDelay(100);
+  }
+ 
+  LbDelay(100);
+}

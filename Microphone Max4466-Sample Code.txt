@@ -1,0 +1,42 @@
+//Microphone Max4466
+#include <Leanbot.h>  // Leanbot library
+
+const int micPin = A6;      // Pin sensor mikrofon
+const int threshold = 700;  // Ambang batas deteksi suara keras
+int clapCount = 0;          // Variabel untuk menghitung jumlah tepukan
+
+void setup() {
+  Leanbot.begin();          // Inisialisasi Leanbot
+  Serial.begin(9600);       // Memulai Serial Monitor
+  
+  // Warna awal: Putih (siaga)
+  LbRGB.fillColor(CRGB::White);
+  LbRGB.show();
+}
+
+void loop() {
+  int soundLevel = analogRead(micPin);  // Membaca nilai sensor mikrofon
+
+  if (soundLevel > threshold) {         // Cek jika suara melebihi ambang batas
+    clapCount++;                        // Tambah hitungan setiap ada tepukan
+    Serial.print(F("Tepukan ke: "));
+    Serial.println(clapCount);
+
+    if (clapCount == 1) {
+      // Tepukan Pertama: MERAH
+      Serial.println(F("Warna: MERAH"));
+      LbRGB.fillColor(0xff0000); // Kode warna Merah
+      Leanbot.tone(500, 100);    // Feedback suara singkat
+    } 
+    else if (clapCount == 2) {
+      // Tepukan Kedua: HIJAU
+      Serial.println(F("Warna: HIJAU"));
+      LbRGB.fillColor(0x00ff00); // Kode warna Hijau
+      Leanbot.tone(800, 100);    // Feedback suara singkat
+      clapCount = 0;             // Reset hitungan kembali ke awal
+    }
+
+    LbRGB.show();                // Update tampilan lampu
+    delay(300);                  // Jeda agar satu tepukan tidak terhitung dobel
+  }
+}

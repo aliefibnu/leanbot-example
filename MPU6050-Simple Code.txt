@@ -1,0 +1,40 @@
+#include <Leanbot.h>
+#include "MPU6050.h"
+
+MPU6050 sensor;
+
+int curr[3];           // Array untuk menyimpan X, Y, Z saat ini
+int prev[3];           // Array untuk menyimpan X, Y, Z sebelumnya
+const int threshold = 3000; 
+
+void setup() {
+  Leanbot.begin();
+  Wire.begin();
+  sensor.initialize();
+  
+  // Ambil data awal sebagai titik nol
+  sensor.getAcceleration(&prev[0], &prev[1], &prev[2]);
+}
+
+void loop() {
+  // 1. Ambil data akselerasi terbaru
+  sensor.getAcceleration(&curr[0], &curr[1], &curr[2]);
+
+  bool getaran = false;
+
+  // 2. Cek ketiga sumbu (X, Y, Z) secara otomatis
+  for (int i = 0; i < 3; i++) {
+    if (abs(curr[i] - prev[i]) > threshold) {
+      getaran = true; // Jika salah satu sumbu lewat batas, set true
+    }
+    prev[i] = curr[i]; // Simpan nilai saat ini untuk putaran berikutnya
+  }
+
+  // 3. Jika terdeteksi getaran, bunyikan alarm
+  if (getaran) {
+    Leanbot.tone(700, 100);
+    Serial.println(F("ADA GETARAN!"));
+  }
+
+  delay(100);
+}

@@ -1,0 +1,48 @@
+// SWRP 10 - M6L1 - Challenge Activity 2 - Sample Program - Leanbot A (Zone 1 Sensor Unit)
+ 
+#include <Leanbot.h>
+#include "LeanbotIoT.h"
+ 
+// === WiFi & IoT Setup ===
+#define WIFI_SSID     F("XXXXXXXX")
+#define WIFI_PASSWORD F("YYYYYYYY")
+#define IOT_ASSET_ID  F("your_asset_id")  // Replace with actual ID
+ 
+auto IoTMotion     = LbIoT.Asset.attributeInt(F("motionStatus"));           // Optional
+auto IoTAlertText  = LbIoT.Asset.attribute(F("alertText"));           // Will send zone-based message
+ 
+// === PIR Sensor Setup ===
+#define PIR_PIN A1
+bool motionSent = false;
+unsigned long lastMotionTime = 0;
+const unsigned long cooldown = 5000;  // 5 sec reset
+ 
+void setup() {
+  Serial.begin(115200);
+  Leanbot.begin();
+  pinMode(PIR_PIN, INPUT);
+ 
+  LbIoT.Wifi.begin(WIFI_SSID, WIFI_PASSWORD);
+  LbIoT.Asset.begin(IOT_ASSET_ID);
+  delay(1000);
+}
+ 
+void loop() {
+  int pirState = digitalRead(PIR_PIN);
+ 
+  if (pirState == HIGH && !motionSent) {
+    Serial.println("Motion Detected: Zone 1");
+    IoTMotion.write(1);
+    IoTAlertText.write("Zone 1");  // <<< Zone-specific message
+    motionSent = true;
+    lastMotionTime = millis();
+  }
+ 
+  if (motionSent && (millis() - lastMotionTime >= cooldown)) {
+    IoTMotion.write(0);
+    IoTAlertText.write("");  // Clear message after 5s
+    motionSent = false;
+  }
+ 
+  delay(100);
+}

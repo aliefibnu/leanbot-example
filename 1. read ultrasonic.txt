@@ -1,0 +1,25 @@
+#include "Leanbot.h"          // Leanbot library
+#include "LeanbotIoT.h"       // Leanbot IoT library
+ 
+// Wifi & IoT Dashboard setup
+#define  WIFI_SSID      F( "ray" )      //change the wifi user ID
+#define  WIFI_PASSWORD  F( "nroc2024" ) //change the wifi password
+ 
+#define  IOT_ASSET_ID   F( "3KdteTWb1Gm2ubWSF48XQo" ) //change the Dashboard link
+#define  IOT_REALM      F( "master" )
+
+auto IoT_Distance = LbIoT.Asset.attributeInt(F( "ultrasonic_Reading" )); //change the Attribute name (follow dashboard)
+
+void setup()
+{
+  Leanbot.begin();
+  LbIoT.Wifi.begin( WIFI_SSID, WIFI_PASSWORD );     // Connect to Wi-Fi
+  LbIoT.Asset.begin( IOT_ASSET_ID, IOT_REALM );     // Connect to IoT dashboard
+}
+
+void loop()
+{
+  int distance = Leanbot.pingCm();
+  IoT_Distance.write(distance);
+  delay(1000);
+}

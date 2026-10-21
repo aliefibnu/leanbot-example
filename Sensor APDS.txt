@@ -1,0 +1,33 @@
+#include <Arduino_APDS9960.h>
+#include <Leanbot.h>
+
+void setup() {
+  Leanbot.begin();    
+  Serial.begin(115200);
+
+  if (!APDS.begin()) {
+    Serial.println(F("APDS-9960 Error!"));
+    while(1);
+  }
+  Serial.println(F("Ready!"));
+}
+
+// Fungsi Ringkas: (Kiri, Kanan, Jarak/Sudut, IsRotation)
+void aksi(int L, int R, int val, bool isRot) {
+  Leanbot.tone(500, 200);
+  LbMotion.runLRrpm(L, R);
+  if (isRot) LbMotion.waitRotationDeg(val); 
+  else LbMotion.waitDistanceMm(val);
+  LbMotion.stopAndWait();
+}
+
+void loop() {
+  if (APDS.gestureAvailable()) {
+    int gesture = APDS.readGesture();
+
+    if (gesture == GESTURE_UP)    { Serial.println(F("UP"));    aksi(-30, -30, 20, false); }
+    if (gesture == GESTURE_DOWN)  { Serial.println(F("DOWN"));  aksi( 30,  30, 20, false); }
+    if (gesture == GESTURE_LEFT)  { Serial.println(F("LEFT"));  aksi( 30, -30, 45, true);  }
+    if (gesture == GESTURE_RIGHT) { Serial.println(F("RIGHT")); aksi(-30,  30, 45, true);  }
+  }
+}

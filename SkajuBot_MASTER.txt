@@ -1,0 +1,36 @@
+#include <Leanbot.h>
+#include <Arduino_APDS9960.h>
+#include <U8g2lib.h>
+#define AKSI(w, k)(OLEDprint(w), Serial.print("Detected : "), Serial.println(w), [ & ]() {int j = k;while (j--) Leanbot.tone(1500, 100), delay(150);}())
+U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0);
+
+void OLEDprint(const char * msg) {
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_7x13B_tr);
+    u8g2.drawStr(10, 18, "SKAJU BOT");
+    u8g2.drawLine(0, 24, 128, 24);
+    u8g2.drawStr(10, 45, "Color :");
+    u8g2.drawStr(10, 62, msg);
+  } while (u8g2.nextPage());
+}
+
+void setup() {
+  Leanbot.begin();
+  Serial.begin(115200);
+  u8g2.begin();
+  while (!APDS.begin()) OLEDprint("Sensor Error");
+  OLEDprint("Scanning...");
+}
+
+void loop() {
+  if (!APDS.colorAvailable()) return OLEDprint("Scanning..."), delay(50);
+  int r, g, b, c; APDS.readColor(r, g, b, c);
+  if (c > 100) return OLEDprint("Scanning..."), delay(50);
+  Serial.print("R : "), Serial.print(r), Serial.print(" G : "), Serial.print(g), Serial.print(" B : "), Serial.print(b), Serial.print(" C : "), Serial.println(c);
+  (g > r && g > b) ? AKSI("GREEN", 5):
+  (b > r && b > g) ? AKSI("BLUE", 1) :
+  (r > b && g > b && r > g && g > (r * 0.6) && c > 50) ? AKSI("YELLOW", 3) :
+  (r > g && r > b && r > 5 && b > 5 && g > 5) ? AKSI("RED", 2) : AKSI("UNKNOWN", 0);
+  delay(500);
+}

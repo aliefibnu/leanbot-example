@@ -1,0 +1,50 @@
+#include <Leanbot.h>
+#include <U8g2lib.h>
+#include <Wire.h>
+#include <ErriezBMX280.h> // Library sesuai Gambar 4
+
+// Inisialisasi OLED SH1106
+U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0);
+
+// Inisialisasi Sensor BMX280 alamat 0x76
+ErriezBMX280 bmx280 = ErriezBMX280(0x76);
+
+void setup() {
+  Leanbot.begin();
+  Wire.begin();
+  u8g2.begin(); //
+
+  // Start sensor
+  if (!bmx280.begin()) {
+    while (1); // Berhenti jika sensor tidak terdeteksi
+  }
+
+  // Pengaturan sampling wajib agar data terbaca
+  bmx280.setSampling(BMX280_MODE_NORMAL,
+                    BMX280_SAMPLING_X16,
+                    BMX280_SAMPLING_X16,
+                    BMX280_SAMPLING_X16,
+                    BMX280_FILTER_X16,
+                    BMX280_STANDBY_MS_500);
+}
+
+void loop() {
+  // Ambil data suhu dan kelembapan
+  float t = bmx280.readTemperature();
+  float h = bmx280.readHumidity();
+
+  // Tampilkan ke OLED
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB10_tr);
+    
+    u8g2.setCursor(0, 25);
+    u8g2.print(F("Temp: ")); u8g2.print(t, 1); u8g2.print(F(" C"));
+    
+    u8g2.setCursor(0, 55);
+    u8g2.print(F("Hum : ")); u8g2.print(h, 0); u8g2.print(F(" %"));
+    
+  } while (u8g2.nextPage());
+
+  delay(1000); // Update data setiap detik
+}

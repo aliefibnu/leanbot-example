@@ -1,0 +1,83 @@
+#include <Leanbot.h>
+#include <U8g2lib.h>
+#include <Wire.h>
+#include "MAX30105.h"
+
+MAX30105 particleSensor;
+U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0);
+
+long lastBeat = 0; 
+float bpm = 0;
+long irValue = 0;
+long prevIR = 0, prevPrevIR = 0;
+
+void setup() {
+  Leanbot.begin();
+  if (!particleSensor.begin(Wire, 400000)) while (1);
+  particleSensor.setup();
+  u8g2.begin();
+}
+
+void loop() {
+  irValue = particleSensor.getIR();
+
+  if (irValue > 50000) { 
+    if (prevIR > prevPrevIR && irValue < prevIR && (millis() - lastBeat) > 300) {
+      long delta = millis() - lastBeat;
+      lastBeat = millis();
+      float bpmTarget = 60000.0 / delta;
+
+      if (bpmTarget > 40 && bpmTarget < 200) {
+        bpm = (bpm == 0) ? bpmTarget : (bpm * 0.7) + (bpmTarget * 0.3); 
+      }
+      Leanbot.tone(880, 40);
+      LbRGB.fillColor(0xFF0000); // Kedip merah saat detak terdeteksi
+      LbRGB.show();
+    }
+  } else {
+    bpm = 0; // Reset jika jari dilepas
+    LbRGB.clear();
+    LbRGB.show();
+  }
+
+  prevPrevIR = prevIR;
+  prevIR = irValue;
+
+  displayOLED();
+  delay(10);
+}
+
+void displayOLED() {
+  u8g2.firstPage();
+  do {
+    u8g2.setFont(u8g2_font_ncenB10_tr);
+    u8g2.setCursor(0, 15);
+    u8g2.print(F("HASIL ANALISIS:"));
+
+    u8g2.setCursor(0, 38);
+    u8g2.setFont(u8g2_font_logisoso18_tn);
+    if (bpm > 0) {
+      u8g2.print((int)bpm);
+      u8g2.setFont(u8g2_font_ncenB08_tr);
+      u8g2.print(F(" BPM"));
+
+      // --- LOGIKA DIAGNOSA KESEHATAN ---
+      u8g2.setCursor(0, 60);
+      u8g2.setFont(u8g2_font_6x12_tr);
+      
+      if (bpm < 60) {
+        u8g2.print(F("STATUS: ATLETIS / RILEX"));
+      } 
+      else if (bpm >= 60 && bpm <= 100) {
+        u8g2.print(F("STATUS: JANTUNG SEHAT"));
+      } 
+      else if (bpm > 120) {
+        u8g2.print(F("STATUS: STRES / CAPEK"));
+      }
+    } else {
+      u8g2.setFont(u8g2_font_6x12_tr);
+      u8g2.print(F("TEMPELKAN JARI ANDA..."));
+    }
+
+  } while (u8g2.nextPage());
+}
